@@ -1,0 +1,8 @@
+backend/target/
+backend/*.lock
+backend/*.db
+frontend/node_modules
+frontend/www/*
+*-lock.json
+!frontend/www/*.html
+!frontend/www/*.css
