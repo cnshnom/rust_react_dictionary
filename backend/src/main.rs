@@ -1,3 +1,4 @@
+use axum::routing::delete;
 use axum::{routing::get, Router};
 
 #[macro_use]
@@ -6,6 +7,7 @@ extern crate dotenvy;
 
 mod db;
 use crate::db::models::CreateWordPair;
+use crate::db::models::DeleteWordPair;
 use crate::db::schema::word_pairs::chinese;
 use crate::db::schema::word_pairs::dsl::word_pairs;
 use crate::db::schema::word_pairs::german;
@@ -60,6 +62,13 @@ async fn create_wordpair(extract::Json(payload): extract::Json<CreateWordPair>) 
     };
 }
 
+async fn delete_wordpair(extract::Json(payload): extract::Json<DeleteWordPair>){
+    let mut connection = establish_connection();
+    println!("{:?}",payload.id);
+
+    let _ =diesel::delete(word_pairs.filter(id.eq(payload.id))).execute(&mut connection);
+}
+
 #[tokio::main]
 async fn main() {
     let app = Router::new()
@@ -85,7 +94,11 @@ async fn main() {
                 return (headers, text);
             }),
         )
+        .route("/delete", delete(|body|async{
+            delete_wordpair(body).await;
+        }))
         .layer(CorsLayer::permissive());
+    
     axum::Server::bind(&"127.0.0.1:8081".parse().unwrap())
         .serve(app.into_make_service())
         .await
