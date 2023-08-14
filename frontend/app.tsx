@@ -32,6 +32,15 @@ const App = () => {
             headers:{"Content-Type": "application/json"},
             body: JSON.stringify(word),
         })
+        .then(response => {return response.json()} )
+        .then(data => {
+            console.log(data);
+            console.log(words.length);
+            var copy = [...words];
+            copy.push({german: data["german"], chinese: data["chinese"]});
+            setWords(copy);
+            console.log(words.length);
+        });
     }
 
     if (isLoading) {
