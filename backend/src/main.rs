@@ -6,21 +6,15 @@ extern crate diesel;
 extern crate dotenvy;
 
 mod db;
-use crate::db::models::CreateWordPair;
-use crate::db::models::DeleteWordPair;
-use crate::db::schema::word_pairs::chinese;
-use crate::db::schema::word_pairs::dsl::word_pairs;
-use crate::db::schema::word_pairs::german;
-use crate::db::schema::word_pairs::id;
-use crate::diesel::ExpressionMethods;
-use crate::diesel::QueryDsl;
-use crate::diesel::RunQueryDsl;
-use axum::extract;
-use axum::http::HeaderMap;
-use axum::routing::post;
+use crate::db::schema::{
+    word_pairs::chinese, word_pairs::dsl::word_pairs, word_pairs::german, word_pairs::id,
+};
+use crate::db::{models::CreateWordPair, models::DeleteWordPair};
+use crate::diesel::{
+    sqlite::SqliteConnection, Connection, ExpressionMethods, QueryDsl, RunQueryDsl,
+};
+use axum::{extract, http::HeaderMap, routing::post};
 use db::models::WordPair;
-use diesel::sqlite::SqliteConnection;
-use diesel::Connection;
 use dotenvy::dotenv;
 use std::env;
 use tower_http::cors::CorsLayer;
@@ -58,15 +52,15 @@ async fn create_wordpair(extract::Json(payload): extract::Json<CreateWordPair>) 
     return WordPair {
         id: uuid.to_string(),
         german: payload.german,
-        chinese: payload.chinese
+        chinese: payload.chinese,
     };
 }
 
-async fn delete_wordpair(extract::Json(payload): extract::Json<DeleteWordPair>){
+async fn delete_wordpair(extract::Json(payload): extract::Json<DeleteWordPair>) {
     let mut connection = establish_connection();
-    println!("{:?}",payload.id);
+    println!("{:?}", payload.id);
 
-    let _ =diesel::delete(word_pairs.filter(id.eq(payload.id))).execute(&mut connection);
+    let _ = diesel::delete(word_pairs.filter(id.eq(payload.id))).execute(&mut connection);
 }
 
 #[tokio::main]
@@ -94,11 +88,14 @@ async fn main() {
                 return (headers, text);
             }),
         )
-        .route("/delete", delete(|body|async{
-            delete_wordpair(body).await;
-        }))
+        .route(
+            "/delete",
+            delete(|body| async {
+                delete_wordpair(body).await;
+            }),
+        )
         .layer(CorsLayer::permissive());
-    
+
     axum::Server::bind(&"127.0.0.1:8081".parse().unwrap())
         .serve(app.into_make_service())
         .await
