@@ -44,6 +44,14 @@ const App = () => {
     }
     const deleteHandler=(id)=>{
         console.log(id);
+        const id_json = {id:id};
+
+        fetch("http://127.0.0.1:8081/delete",
+        {
+            method:"DELETE",
+            headers:{"Content-Type": "application/json"},
+            body: JSON.stringify(id_json),
+        })
         const list = [...words];
         setWords(list.filter(word=>word.id!==id));
 
