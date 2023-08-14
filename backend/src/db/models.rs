@@ -22,3 +22,9 @@ pub struct CreateWordPair{
     pub german: String,
     pub chinese: String
 }
+#[derive(Deserialize)]
+#[derive(Debug)]
+pub struct DeleteWordPair{
+    pub id: String,
+
+}

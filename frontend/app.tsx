@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react"
 import ReactDOM from "react-dom/client"
 
 const App = () => {
-    const [words, setWords] = useState([{german:"",chinese:""}]);
+    const [words, setWords] = useState([{german:"",chinese:"",id:""}]);
     const [isLoading, setLoading] = useState(true);
     const [germanWord, setGermanWord] = useState();
     const [chineseWord, setChineseWord] = useState();
@@ -37,10 +37,24 @@ const App = () => {
             console.log(data);
             console.log(words.length);
             var copy = [...words];
-            copy.push({german: data["german"], chinese: data["chinese"]});
+            copy.push({german: data["german"], chinese: data["chinese"],id:data["id"]});
             setWords(copy);
             console.log(words.length);
         });
+    }
+    const deleteHandler=(id)=>{
+        console.log(id);
+        const id_json = {id:id};
+
+        fetch("http://127.0.0.1:8081/delete",
+        {
+            method:"DELETE",
+            headers:{"Content-Type": "application/json"},
+            body: JSON.stringify(id_json),
+        })
+        const list = [...words];
+        setWords(list.filter(word=>word.id!==id));
+
     }
 
     if (isLoading) {
@@ -56,18 +70,23 @@ const App = () => {
                 </thead>
                 <tbody>
                     {
-                        words.map(item => {return  <tr><td>{item.german}</td><td>{item.chinese}</td></tr>; })
+                        words.map(item => {return  <tr>
+                            <td>{item.german}</td>
+                            <td>{item.chinese}</td>
+                            <td><button onClick={() => {deleteHandler(item.id);}}>Delete</button></td>
+                        </tr>; })
                     }
                 </tbody>
             </table>
             
-            <div id = "enter">
+            <div id = "add">
                 <p>German</p>
                 <input onChange={handleGermanChange}/>
                 <p>Chinese</p>
                 <input onChange={handleChineseChange}/>
                 <button onClick={submitHandler}>submit</button>
             </div>
+            
             
             </div>);
     }
