@@ -43,21 +43,25 @@ const App = () => {
                     <tr>
                         <th>German</th>
                         <th>Chinese</th>
+                        <th>Delete</th>
                     </tr>
                 </thead>
                 <tbody>
                     {
-                        words.map((item, index) => {return  <tr><td>{item.german}</td><td>{item.chinese}</td></tr>; })
+                        words.map((item, index) => {return  <tr><td>{item.german}</td><td>{item.chinese}</td><td><input type="checkbox"></input></td></tr>; })
                     }
                 </tbody>
             </table>
             
-            <div id = "enter">
+            <div id = "add">
                 <p>German</p>
                 <input onChange={handleGermanChange}/>
                 <p>Chinese</p>
                 <input onChange={handleChineseChange}/>
                 <button onClick={submitHandler}>submit</button>
+            </div>
+            <div id="delete">
+                <button>delete</button>
             </div>
             
             </div>);
