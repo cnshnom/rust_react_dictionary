@@ -9,11 +9,11 @@ mod db;
 use crate::db::schema::{
     word_pairs::chinese, word_pairs::dsl::word_pairs, word_pairs::german, word_pairs::id,
 };
-use crate::db::{models::CreateWordPair, models::DeleteWordPair};
+use crate::db::models::CreateWordPair;
 use crate::diesel::{
     sqlite::SqliteConnection, Connection, ExpressionMethods, QueryDsl, RunQueryDsl,
 };
-use axum::{extract, http::HeaderMap, routing::post};
+use axum::{extract::Json, extract::Path, routing::post};
 use db::models::WordPair;
 use dotenvy::dotenv;
 use std::env;
@@ -28,16 +28,17 @@ fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-fn get_word_pairs() -> Vec<WordPair> {
+async fn get_word_pairs() -> String {
     let mut connection = establish_connection();
-    let vec = word_pairs
+    let pairs = word_pairs
         .limit(1000)
         .load::<WordPair>(&mut connection)
         .expect("Error loading word pairs");
-    return vec;
+    println!("Loaded {:?} word pairs from database", pairs.len());
+    return serde_json::to_string(&pairs).unwrap();
 }
 
-async fn create_wordpair(extract::Json(payload): extract::Json<CreateWordPair>) -> WordPair {
+async fn create_wordpair(Json(payload): Json<CreateWordPair>) -> String {
     let uuid = Uuid::new_v4();
 
     let mut connection = establish_connection();
@@ -49,51 +50,33 @@ async fn create_wordpair(extract::Json(payload): extract::Json<CreateWordPair>) 
         ))
         .execute(&mut connection);
 
-    return WordPair {
+    let word_pair = WordPair {
         id: uuid.to_string(),
         german: payload.german,
         chinese: payload.chinese,
     };
+
+    let word_pair_json = serde_json::to_string(&word_pair).unwrap();
+    println!("Created new word pair: {:?}", word_pair_json);
+    return word_pair_json;
 }
 
-async fn delete_wordpair(extract::Json(payload): extract::Json<DeleteWordPair>) {
+async fn delete_word_pair(Path(word_pair_id): Path<Uuid>) {
     let mut connection = establish_connection();
-    println!("{:?}", payload.id);
 
-    let _ = diesel::delete(word_pairs.filter(id.eq(payload.id))).execute(&mut connection);
+    let _ =
+        diesel::delete(word_pairs.filter(id.eq(word_pair_id.to_string()))).execute(&mut connection);
+
+    println!("Deleted WordPair with id {:?}", word_pair_id.to_string());
 }
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
         .route("/health", get(|| async { "Server running!" }))
-        .route(
-            "/word_pairs",
-            get(|| async {
-                let pairs = get_word_pairs();
-                let json = serde_json::to_string(&pairs).unwrap();
-                let mut headers = HeaderMap::new();
-                headers.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-                return (headers, json);
-            }),
-        )
-        .route(
-            "/post_new_words",
-            post(|body| async {
-                let word_pair = create_wordpair(body).await;
-                let mut headers = HeaderMap::new();
-                headers.insert("Access-Control-Allow-Origin", "*".parse().unwrap());
-                let text = serde_json::to_string(&word_pair).unwrap();
-                println!("{:?}", text);
-                return (headers, text);
-            }),
-        )
-        .route(
-            "/delete",
-            delete(|body| async {
-                delete_wordpair(body).await;
-            }),
-        )
+        .route("/word_pairs", get(get_word_pairs))
+        .route("/word_pairs", post(create_wordpair))
+        .route("/word_pairs/:word_pair_id", delete(delete_word_pair))
         .layer(CorsLayer::permissive());
 
     axum::Server::bind(&"127.0.0.1:8081".parse().unwrap())

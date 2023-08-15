@@ -26,7 +26,7 @@ const App = () => {
     }
     const submitHandler=()=>{
         const word ={german:germanWord,chinese:chineseWord};
-        fetch("http://127.0.0.1:8081/post_new_words",
+        fetch("http://127.0.0.1:8081/word_pairs",
         {
             method:"POST",
             headers:{"Content-Type": "application/json"},
@@ -44,13 +44,11 @@ const App = () => {
     }
     const deleteHandler=(id)=>{
         console.log(id);
-        const id_json = {id:id};
-
-        fetch("http://127.0.0.1:8081/delete",
+        const delete_uri = "http://127.0.0.1:8081/word_pairs/" + id;
+        fetch(delete_uri,
         {
             method:"DELETE",
             headers:{"Content-Type": "application/json"},
-            body: JSON.stringify(id_json),
         })
         const list = [...words];
         setWords(list.filter(word=>word.id!==id));
